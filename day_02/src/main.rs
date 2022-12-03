@@ -101,9 +101,10 @@ fn main() {
     let reader = BufReader::new(file);
 
     let result : i32 = reader.lines().map(|l| {
-        let line = l.unwrap().into_bytes();
-        let left : HandShape = line[0].try_into().unwrap();
-        let game_result: GameResult = line[2].try_into().unwrap();
+        let line = l.unwrap();
+        let line_ascii = line.as_bytes();
+        let left : HandShape = line_ascii[0].try_into().unwrap();
+        let game_result: GameResult = line_ascii[2].try_into().unwrap();
         let my_shape = left.pick_opponent_that(game_result);
 
         my_shape.play_match(left)
