@@ -15,8 +15,8 @@ fn main() {
     }
 
     let position = buffer.trim_end().as_bytes().windows(MARKER_LENGTH).position(|window| {
-        let mut set = HashSet::with_capacity(14);
-        let mut range = 0..14;
+        let mut set = HashSet::with_capacity(MARKER_LENGTH);
+        let mut range = 0..MARKER_LENGTH;
 
         return range.all(|idx| set.insert(window[idx]));
     })
