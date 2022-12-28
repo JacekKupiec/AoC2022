@@ -33,8 +33,10 @@ struct Point {
 
 fn main() {
     let p = Point { x: 4, y: Default::default(), q: RefCell::default() };
+    let v: Vec<usize> = (1..6).rev().collect();
 
     println!("{:?}", p);
+    println!("{:?}", v);
 
     // let a = Rc::new(Cons(5, RefCell::new(Rc::new(Nil))));
 
