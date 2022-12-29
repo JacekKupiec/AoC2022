@@ -20,7 +20,6 @@ impl Position {
     }
 }
 
-
 // operator overloading
 impl std::ops::Sub<Position> for Position {
     type Output = (isize, isize);
@@ -33,7 +32,7 @@ impl std::ops::Sub<Position> for Position {
     }
 }
 
-fn get_vector_from_coomand(command: &str) -> (isize, isize) {
+fn get_vector_from_comand(command: &str) -> (isize, isize) {
     match command {
         "R" => (1, 0),
         "L" => (-1, 0),
@@ -44,29 +43,32 @@ fn get_vector_from_coomand(command: &str) -> (isize, isize) {
 }
 
 fn main() {
-    let file = File::open("small_input.txt").unwrap();
+    let file = File::open("input.txt").unwrap();
     let reader = BufReader::new(file);
     let mut tail_positions: HashSet<Position> = HashSet::new();
-    let mut head: Position = Default::default();
-    let mut tail: Position = Default::default();
+    let mut knots = [Position::default(); 10];
 
-    tail_positions.insert(tail);
+    tail_positions.insert(knots[9]);
 
     for line in reader.lines().map(|l| l.unwrap()) {
         let parts: Vec<&str> = line.trim_end().split(" ").collect();
-        let (x_command_move, y_command_move) = get_vector_from_coomand(parts[0]);
+        let (x_command_move, y_command_move) = get_vector_from_comand(parts[0]);
         let repeats_count: usize = parts[1].parse().unwrap();
 
         for _ in 0..repeats_count {
-            head.vector_move(x_command_move, y_command_move);
+            knots[0].vector_move(x_command_move, y_command_move);
 
-            if tail.is_not_adjacent(&head) {
-                // move tail properly
-                let (x_distance, y_distance) = head - tail;
-                tail.vector_move(x_distance, y_distance);
+            for knot_idx in 1..knots.len() {
+                let head_idx = knot_idx - 1;
+                let tail_idx = knot_idx;
 
-                tail_positions.insert(tail);
+                if knots[tail_idx].is_not_adjacent(&knots[head_idx]) {
+                    let (x_distance, y_distance) = knots[head_idx] - knots[tail_idx];
+                    knots[tail_idx].vector_move(x_distance, y_distance);
+                }
             }
+
+            tail_positions.insert(*knots.last().unwrap());
         }
     }
 
