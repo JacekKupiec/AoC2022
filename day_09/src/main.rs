@@ -14,13 +14,9 @@ impl Position {
         x_distance*x_distance + y_distance*y_distance > 2
     }
 
-    fn vector_move(&mut self, x: isize, y: isize) -> Self {
-        let previous = *self;
-
+    fn vector_move(&mut self, x: isize, y: isize){
         self.x += x;
         self.y += y;
-
-        return previous;
     }
 }
 
@@ -30,7 +26,10 @@ impl std::ops::Sub<Position> for Position {
     type Output = (isize, isize);
 
     fn sub(self, rhs: Position) -> Self::Output {
-        (self.x - rhs.x, self.y - rhs.y)
+        let x = (self.x - rhs.x).clamp(-1, 1);
+        let y = (self.y - rhs.y).clamp(-1, 1);
+
+        (x, y)
     }
 }
 
@@ -45,7 +44,7 @@ fn get_vector_from_coomand(command: &str) -> (isize, isize) {
 }
 
 fn main() {
-    let file = File::open("input.txt").unwrap();
+    let file = File::open("small_input.txt").unwrap();
     let reader = BufReader::new(file);
     let mut tail_positions: HashSet<Position> = HashSet::new();
     let mut head: Position = Default::default();
@@ -59,11 +58,11 @@ fn main() {
         let repeats_count: usize = parts[1].parse().unwrap();
 
         for _ in 0..repeats_count {
-            let previous_head = head.vector_move(x_command_move, y_command_move);
+            head.vector_move(x_command_move, y_command_move);
 
             if tail.is_not_adjacent(&head) {
                 // move tail properly
-                let (x_distance, y_distance) = previous_head - tail;
+                let (x_distance, y_distance) = head - tail;
                 tail.vector_move(x_distance, y_distance);
 
                 tail_positions.insert(tail);
