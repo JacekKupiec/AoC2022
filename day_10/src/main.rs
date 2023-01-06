@@ -86,7 +86,7 @@ fn solution_part2(reader: BufReader<File>) {
             if register_state >= crt_cycle - 1 && register_state <= crt_cycle + 1 {
                 print!("#");
             } else {
-                print!(".");
+                print!(" ");
             }
         })
 }
