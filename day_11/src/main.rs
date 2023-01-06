@@ -6,21 +6,21 @@ use scanf::sscanf;
 
 #[derive(Clone, Copy, Debug)]
 enum Operation {
-    Add(i32),
-    Multiply(i32),
+    Add(usize),
+    Multiply(usize),
     Squere
 }
 
 struct Monkey {
-    items: VecDeque<i32>,
+    items: VecDeque<usize>,
     operation: Operation,
-    divisor: i32,
+    divisor: usize,
     idx_if_divisible: usize,
     idx_if_not_divisible: usize,
     inspection_count: usize
 }
 
-fn parse_starting_items(line: &str) -> VecDeque<i32> {
+fn parse_starting_items(line: &str) -> VecDeque<usize> {
     let (_, starting_items) = line
         .trim()
         .split_once(": ")
@@ -48,7 +48,7 @@ fn parse_operation(line: &str) -> Operation {
     }
 }
 
-fn parse_divisor(line: &str) -> i32 {
+fn parse_divisor(line: &str) -> usize {
     let mut divisor = 0;
 
     let _ = sscanf!(line.trim(), "Test: divisible by {}", divisor);
@@ -74,7 +74,7 @@ fn parse_target_monkeys(lines: &str) -> (usize, usize) {
 }
 
 fn main() {
-    let file = File::open("small_.txt").unwrap();
+    let file = File::open("input.txt").unwrap();
     let mut reader = BufReader::new(file);
     let mut buffer = String::new();
     let mut monkeys: Vec<Monkey> = Vec::new();
@@ -119,6 +119,8 @@ fn main() {
         let _ = reader.read_line(&mut buffer);
     }
 
+    let mitigator: usize = monkeys.iter().map(|m| m.divisor).product();
+
     for _ in 1..=10_000 {
         for monkey_idx in 0..monkeys.len() {
             monkeys[monkey_idx].inspection_count += monkeys[monkey_idx].items.len();
@@ -130,14 +132,17 @@ fn main() {
                     Operation::Add(term) => item_worry_level + term,
                     Operation::Multiply(factor) => item_worry_level * factor,
                     Operation::Squere => item_worry_level.pow(2)
-                } ??;
+                } % mitigator;
 
-                if re_evaluated_item % monkeys[monkey_idx].divisor == 0 {
-                    let idx_if_divisible = monkeys[monkey_idx].idx_if_divisible;
-                    monkeys[idx_if_divisible].items.push_back(re_evaluated_item);
+                let reminder = re_evaluated_item % monkeys[monkey_idx].divisor;
+
+                if reminder == 0 {
+                    let idx_divisible = monkeys[monkey_idx].idx_if_divisible;
+                    monkeys[idx_divisible].items.push_back(re_evaluated_item);
                 } else {
-                    let idx_if_not_divisible = monkeys[monkey_idx].idx_if_not_divisible;
-                    monkeys[idx_if_not_divisible].items.push_back(re_evaluated_item);
+                    let idx_not_divisible = monkeys[monkey_idx].idx_if_not_divisible;
+
+                    monkeys[idx_not_divisible].items.push_back(re_evaluated_item);
                 }
             }
         }
