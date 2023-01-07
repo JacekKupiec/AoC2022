@@ -125,7 +125,6 @@ fn main() {
 
     for _ in 1..=10_000 {
         for monkey in &monkeys {
-            //monkeys[monkey_idx].inspection_count += monkeys[monkey_idx].items.len();
             let items_count = monkey.items.borrow().len() as u64;
             let inspection_count = monkey.inspection_count.get();
             
@@ -155,5 +154,4 @@ fn main() {
         a.inspection_count.cmp(&b.inspection_count).reverse());
 
     println!("{}", monkeys[0].inspection_count.get() * monkeys[1].inspection_count.get());
-
 }
