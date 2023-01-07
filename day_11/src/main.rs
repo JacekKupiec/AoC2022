@@ -119,7 +119,8 @@ fn main() {
         let _ = reader.read_line(&mut buffer);
     }
 
-    let mitigator: usize = monkeys.iter().map(|m| m.divisor).product();
+    // all divisors are prime numbers so it's simpler to find the value
+    let lowest_common_multiple: usize = monkeys.iter().map(|m| m.divisor).product();
 
     for _ in 1..=10_000 {
         for monkey_idx in 0..monkeys.len() {
@@ -132,7 +133,7 @@ fn main() {
                     Operation::Add(term) => item_worry_level + term,
                     Operation::Multiply(factor) => item_worry_level * factor,
                     Operation::Squere => item_worry_level.pow(2)
-                } % mitigator;
+                } % lowest_common_multiple;
 
                 let reminder = re_evaluated_item % monkeys[monkey_idx].divisor;
 
