@@ -6,21 +6,21 @@ use scanf::sscanf;
 
 #[derive(Clone, Copy, Debug)]
 enum Operation {
-    Add(usize),
-    Multiply(usize),
+    Add(u64),
+    Multiply(u64),
     Squere
 }
 
 struct Monkey {
-    items: VecDeque<usize>,
+    items: VecDeque<u64>,
     operation: Operation,
-    divisor: usize,
+    divisor: u64,
     idx_if_divisible: usize,
     idx_if_not_divisible: usize,
     inspection_count: usize
 }
 
-fn parse_starting_items(line: &str) -> VecDeque<usize> {
+fn parse_starting_items(line: &str) -> VecDeque<u64> {
     let (_, starting_items) = line
         .trim()
         .split_once(": ")
@@ -48,7 +48,7 @@ fn parse_operation(line: &str) -> Operation {
     }
 }
 
-fn parse_divisor(line: &str) -> usize {
+fn parse_divisor(line: &str) -> u64 {
     let mut divisor = 0;
 
     let _ = sscanf!(line.trim(), "Test: divisible by {}", divisor);
@@ -120,7 +120,7 @@ fn main() {
     }
 
     // all divisors are prime numbers so it's simpler to find the value
-    let lowest_common_multiple: usize = monkeys.iter().map(|m| m.divisor).product();
+    let lowest_common_multiple: u64 = monkeys.iter().map(|m| m.divisor).product();
 
     for _ in 1..=10_000 {
         for monkey_idx in 0..monkeys.len() {
