@@ -1,3 +1,4 @@
+use std::cell::{Cell, RefCell};
 use std::fs::File; 
 use std::io::{BufReader, BufRead};
 use std::collections::VecDeque;
@@ -12,12 +13,12 @@ enum Operation {
 }
 
 struct Monkey {
-    items: VecDeque<u64>,
+    items: RefCell<VecDeque<u64>>,
     operation: Operation,
     divisor: u64,
-    idx_if_divisible: usize,
-    idx_if_not_divisible: usize,
-    inspection_count: usize
+    idx_divisible: usize,
+    idx_not_divisible: usize,
+    inspection_count: Cell<u64>
 }
 
 fn parse_starting_items(line: &str) -> VecDeque<u64> {
@@ -106,12 +107,12 @@ fn main() {
         let (divisible, not_divisible) = parse_target_monkeys(&buffer);
 
         let monkey = Monkey {
-            items: monkeys_items,
+            items: RefCell::new(monkeys_items),
             operation,
             divisor,
-            idx_if_divisible: divisible,
-            idx_if_not_divisible: not_divisible,
-            inspection_count: 0
+            idx_divisible: divisible,
+            idx_not_divisible: not_divisible,
+            inspection_count: Cell::new(0)
         };
         monkeys.push(monkey);
 
@@ -123,28 +124,29 @@ fn main() {
     let lowest_common_multiple: u64 = monkeys.iter().map(|m| m.divisor).product();
 
     for _ in 1..=10_000 {
-        for monkey_idx in 0..monkeys.len() {
-            monkeys[monkey_idx].inspection_count += monkeys[monkey_idx].items.len();
+        for monkey in &monkeys {
+            //monkeys[monkey_idx].inspection_count += monkeys[monkey_idx].items.len();
+            let items_count = monkey.items.borrow().len() as u64;
+            let inspection_count = monkey.inspection_count.get();
+            
+            monkey.inspection_count.set(items_count + inspection_count);
+            let mut monkey_items = monkey.items.borrow_mut();
 
-            while let Some(item_worry_level) = monkeys[monkey_idx].items.pop_front() {
-                let op = monkeys[monkey_idx].operation;
-
-                let re_evaluated_item = match op {
+            while let Some(item_worry_level) = monkey_items.pop_front() {
+                let re_evaluated_item = match monkey.operation {
                     Operation::Add(term) => item_worry_level + term,
                     Operation::Multiply(factor) => item_worry_level * factor,
                     Operation::Squere => item_worry_level.pow(2)
                 } % lowest_common_multiple;
 
-                let reminder = re_evaluated_item % monkeys[monkey_idx].divisor;
-
-                if reminder == 0 {
-                    let idx_divisible = monkeys[monkey_idx].idx_if_divisible;
-                    monkeys[idx_divisible].items.push_back(re_evaluated_item);
+                let target_monkey_idx = if re_evaluated_item % monkey.divisor == 0 {
+                    monkey.idx_divisible
                 } else {
-                    let idx_not_divisible = monkeys[monkey_idx].idx_if_not_divisible;
+                    monkey.idx_not_divisible
+                };
 
-                    monkeys[idx_not_divisible].items.push_back(re_evaluated_item);
-                }
+                let mut target_monkey_items = monkeys[target_monkey_idx].items.borrow_mut();
+                target_monkey_items.push_back(re_evaluated_item);
             }
         }
     }
@@ -152,6 +154,6 @@ fn main() {
     monkeys.sort_by(|a, b| 
         a.inspection_count.cmp(&b.inspection_count).reverse());
 
-    println!("{}", monkeys[0].inspection_count * monkeys[1].inspection_count);
+    println!("{}", monkeys[0].inspection_count.get() * monkeys[1].inspection_count.get());
 
 }
