@@ -16,15 +16,17 @@ struct PriorityQueueItem {
     vertex: usize
 }
 
+// remember that the Heap is maximizing by default, not minimizing
+
 impl PartialOrd for PriorityQueueItem {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        Option::from(self.distance.cmp(&other.distance))
+        Option::from(self.distance.cmp(&other.distance).reverse())
     }
 }
 
 impl Ord for PriorityQueueItem {
     fn cmp(&self, other: &Self) -> Ordering {
-        self.distance.cmp(&other.distance)
+        self.distance.cmp(&other.distance).reverse()
     }
 }
 
@@ -33,7 +35,7 @@ const S_CODE: u8 = b'S';
 
 fn main() {
     let args: Vec<String> = env::args().collect();
-    let path = "small_input.txt"; //args.get(1).unwrap();
+    let path = args.get(1).unwrap();
     let file = File::open(path).unwrap();
     let reader = BufReader::new(file);
 
@@ -58,7 +60,23 @@ fn main() {
     });
 
     let graph = build_graph(&map);
-    let result = calculate_distance_priority_queue(&graph, source, target);
+
+    // solution part 1
+    // let result = calculate_distance(&graph, source, target);
+
+    // solution part 2 - naive aproach
+    let result = map.iter().flatten().enumerate().filter_map(|(idx, height)| {
+        if *height == b'a' {
+            let distance = calculate_distance(&graph, idx, target);
+            Some(distance)
+        } else {
+            None
+        }
+    })
+    .min()
+    .unwrap();
+
+    // best solution: https://www.reddit.com/r/adventofcode/comments/zjnruc/2022_day_12_solutions/
 
     println!("{}", result);
 }
@@ -124,7 +142,7 @@ fn find_start_end_vertices(board: &Vec<Vec<u8>>) -> (usize, usize) {
     return (start_position, end_position);
 }
 
-fn calculate_distance_priority_queue(graph: &Vec<Vec<Edge>>, source: usize, target: usize) -> u32 {
+fn calculate_distance(graph: &Vec<Vec<Edge>>, source: usize, target: usize) -> u32 {
     let mut distances = vec![u32::MAX; graph.len()];
     let mut visit_statuses = vec![false; graph.len()];
     let mut priority_queue = BinaryHeap::with_capacity(graph.len());
