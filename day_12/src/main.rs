@@ -28,32 +28,36 @@ impl Ord for PriorityQueueItem {
     }
 }
 
-const E_CODE: u8 = b'z' - b'a' + 2;
-const S_CODE: u8 = 0;
+const E_CODE: u8 = b'E';
+const S_CODE: u8 = b'S';
 
 fn main() {
     let args: Vec<String> = env::args().collect();
-    let path = "input.txt";//args.get(1).unwrap();
+    let path = "small_input.txt"; //args.get(1).unwrap();
     let file = File::open(path).unwrap();
     let reader = BufReader::new(file);
 
-    let map: Vec<Vec<u8>> = reader.lines()
+    let mut map: Vec<Vec<u8>> = reader.lines()
         .map(|line| {
             line.unwrap()
                 .trim_end()
                 .bytes()
-                .map(|c| match c {
-                    b'a'..=b'z' => c - b'a' + 1,
-                    b'S' => S_CODE,
-                    b'E' => E_CODE,
-                    _ => panic!("Unknown character: {}", c)
-                })
                 .collect()
             })
         .collect();
 
-    let graph = build_graph(&map);
     let (source, target) = find_start_end_vertices(&map);
+
+    map.iter_mut().flatten().for_each(|x| {
+        *x = match *x {
+            c @ b'a'..=b'z' => c,
+            b'S' => b'a',
+            b'E' => b'z',
+            _ => panic!("Character out of range {}", *x as char)
+        }
+    });
+
+    let graph = build_graph(&map);
     let result = calculate_distance_priority_queue(&graph, source, target);
 
     println!("{}", result);
@@ -102,16 +106,17 @@ fn build_graph(board: &Vec<Vec<u8>>) -> Vec<Vec<Edge>> {
 fn find_start_end_vertices(board: &Vec<Vec<u8>>) -> (usize, usize) {
     let mut start_position = 0;
     let mut end_position = 0;
-    let column_count = board[0].len();
+    let rows_count = board.len();
+    let columns_count = board[0].len();
 
-    for row_idx in 0..board.len() {
-        for column_idx in 0..board[0].len() {
+    for row_idx in 0..rows_count {
+        for column_idx in 0..columns_count {
             if board[row_idx][column_idx] == S_CODE {
-                start_position = row_idx*column_count + column_idx;
+                start_position = row_idx*columns_count + column_idx;
             }
 
             if board[row_idx][column_idx] == E_CODE {
-                end_position = row_idx*column_count + column_idx;
+                end_position = row_idx*columns_count + column_idx;
             }
         }
     }
