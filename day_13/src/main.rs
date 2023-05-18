@@ -1,12 +1,14 @@
 #![feature(iter_array_chunks)]
 
+// this works with array chunks feature, as far as I know it requres nightly toolchain
+
 use std::cmp::Ordering;
 use std::env;
 use std::fs::File;
 use std::io::{BufRead, BufReader};
 use crate::SignalPacket::*;
 
-#[derive(Debug, Eq)]
+#[derive(Debug, Eq, Clone)]
 enum SignalPacket{
     Number(i32),
     List(Vec<SignalPacket>)
@@ -53,27 +55,47 @@ impl Ord for SignalPacket {
 }
 
 fn parse_list(input_text: &str) -> Vec<SignalPacket> {
-    let mut reval: Vec<SignalPacket> = Vec::new();
+    let mut nested_arrays : Vec<Vec<SignalPacket>> = Vec::new();
+    let mut buffer = String::new();
+    let mut characters = input_text.chars();
 
-    if let Some(text_prefix_stripped) = input_text.strip_prefix('[') {
-        if let Some(stripped_text) = text_prefix_stripped.strip_suffix(']') {
-            for slice in stripped_text.split(',') {
-                if slice.starts_with('[') {
-                    let result = parse_list(slice);
+    while let Some(c) = characters.next() {
+        match c {
+            '[' => nested_arrays.push(Vec::new()),
+            '0'..='9' => buffer.push(c),
+            ',' => {
+                let most_nested = nested_arrays.last_mut().unwrap();
 
-                    reval.push(List(result));
-                } else if let Ok(number) = slice.parse() {
-                    reval.push(Number(number));
+                if !buffer.is_empty() {
+                    most_nested.push(Number(buffer.parse().unwrap()));
+                    buffer.clear();
                 }
-            }
+            },
+            ']' => {
+                let mut mostly_nested_set = nested_arrays.pop().unwrap();
+
+                if !buffer.is_empty() {
+                    mostly_nested_set.push(Number(buffer.parse().unwrap()));
+                    buffer.clear();
+                }
+
+                if let Some(parent_set) = nested_arrays.last_mut() {
+                    parent_set.push(List(mostly_nested_set));
+                } else {
+                    return mostly_nested_set;
+                }
+                
+            },
+            _ => panic!("Unparsable character {}", c)
         }
     }
 
-    reval
+    panic!("Too many opening [, no closing ]");
 }
 
 fn main() {
     let args: Vec<String> = env::args().collect();
+    //let path = "D:\\source\\Rust\\AoC 2022\\day_13\\small_input.txt";
     let path = args.get(1).unwrap();
     let file = File::open(path).unwrap();
     let reader = BufReader::new(file);
@@ -93,6 +115,11 @@ fn main() {
         .filter_map(|(idx, [left_line, right_line])| {
             let left_list = parse_list(&left_line);
             let right_list = parse_list(&right_line);
+
+            // println!("{:?} <- {}\n{:?} <- {}\n{:?}\n\n", 
+            //     left_list, left_line, 
+            //     right_list, right_line, 
+            //     left_list.cmp(&right_list));
 
             if left_list.lt(&right_list) {
                 Some(idx + 1)

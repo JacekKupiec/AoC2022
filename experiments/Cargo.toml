@@ -7,3 +7,4 @@ edition = "2021"
 
 [dependencies]
 scanf = "1.2.1"
+chrono = "0.4.24"
