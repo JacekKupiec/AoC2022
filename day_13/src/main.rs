@@ -93,14 +93,8 @@ fn parse_list(input_text: &str) -> Vec<SignalPacket> {
     panic!("Too many opening [, no closing ]");
 }
 
-fn main() {
-    let args: Vec<String> = env::args().collect();
-    //let path = "D:\\source\\Rust\\AoC 2022\\day_13\\small_input.txt";
-    let path = args.get(1).unwrap();
-    let file = File::open(path).unwrap();
-    let reader = BufReader::new(file);
-    
-    let results: usize = reader.lines()
+fn task1(reader: BufReader<File>) -> usize {
+    reader.lines()
         .filter_map(|line_result| {
             let line = line_result.unwrap().trim_end().to_string();
 
@@ -127,7 +121,48 @@ fn main() {
                 None
             }
         })
-        .sum();
+        .sum()
+}
+
+fn task2(reader: BufReader<File>) -> usize {
+    let mut sets: Vec<_> = reader.lines()
+        .filter_map(|line_result| {
+            let line = line_result.unwrap().trim_end().to_string();
+
+            if !line.is_empty() {
+                Some(line)
+            } else {
+                None
+            }
+        })
+        .map(|line| parse_list(&line))
+        .collect();
+
+    let set_set_2 = vec![List(vec![Number(2)])];
+    let set_set_6 = vec![List(vec![Number(6)])];
+    sets.push(set_set_2.clone());
+    sets.push(set_set_6.clone());
+    sets.sort();
+    //println!("{:?}", sets);
+
+    let position_of_ss2 = sets.iter()
+        .position(|set| *set == set_set_2)
+        .unwrap() + 1;
+    let position_of_ss6 = sets.iter()
+        .position(|set| *set == set_set_6)
+        .unwrap() + 1;
+
+    return position_of_ss2 * position_of_ss6;
+}
+
+fn main() {
+    let args: Vec<String> = env::args().collect();
+    //let path = "D:\\source\\Rust\\AoC 2022\\day_13\\small_input.txt";
+    let path = args.get(1).unwrap();
+    let file = File::open(path).unwrap();
+    let reader = BufReader::new(file);
+    
+    let results: usize = task2(reader);
 
     println!("{:?}", results);
 }
