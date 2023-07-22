@@ -15,9 +15,40 @@ struct Point {
 impl Point {
     fn new(x: i32, y: i32) -> Point {
         Point {
-            x: x,
-            y: y
+            x, y
         }
+    }
+
+    fn next_down(&self) -> Point {
+        Point {
+            x: self.x, y: self.y + 1
+        }
+    }
+
+    fn next_left(&self) -> Point {
+        Point {
+            x: self.x - 1, y: self.y + 1
+        }
+    }
+
+    fn next_right(&self) -> Point {
+        Point {
+            x: self.x + 1, y: self.y + 1
+        }
+    }
+
+    fn fall_down(&mut self) {
+        self.y += 1;
+    }
+
+    fn fall_left(&mut self) {
+        self.x -= 1;
+        self.y += 1;
+    }
+
+    fn fall_rigth(&mut self) {
+        self.x += 1;
+        self.y += 1;
     }
 }
 
@@ -38,20 +69,21 @@ impl FromStr for Point {
 }
 
 fn main() {
-    let args: Vec<String> = env::args().collect();
-    //let path = "D:\\source\\Rust\\AoC 2022\\day_13\\small_input.txt";
-    let path = args.get(1).unwrap();
+    let path = "D:\\source\\Rust\\AoC 2022\\day_14\\src\\input.txt";
     let file = File::open(path).unwrap();
     let reader = BufReader::new(file);
 
-    let parsed_points: HashSet<Point> = reader.lines()
+    let mut cave_rock_structure: HashSet<Point> = reader.lines()
         .flat_map(|line| {
+            // These are points in a single line that are separated by " -> "
             let crucial_points: Vec<Point> = line.unwrap()
                 .trim_end()
                 .split(" -> ")
-                .map(|s|  s.parse::<Point>().unwrap())
+                .map(|s|  s.parse().unwrap())
                 .collect();
 
+            // Generate all points in the line 498,4 -> 498,6 including the edges
+            // This will generate duplicates but the will be deleted by HashSet (set has no duplicates)
             let all_points_in_the_line : Vec<Point> = crucial_points.windows(2)
                 .flat_map(|wnd| {
                     let begin = wnd[0];
@@ -78,5 +110,43 @@ fn main() {
         })
         .collect();
 
-    
+    let mut sand_in_rest = 0;
+    let cave_bed = cave_rock_structure.iter().map(|p| p.y).max().unwrap();
+
+    'sand_falling_process: loop {
+        let mut falling_sand = Point::new(500, 0);
+
+        'unit_of_sand_falling: loop {
+            if falling_sand.y >= cave_bed {
+                break 'sand_falling_process;
+            }
+
+            let down_move = falling_sand.next_down();
+
+            if !cave_rock_structure.contains(&down_move) {
+                falling_sand.fall_down();
+                continue 'unit_of_sand_falling;
+            }
+
+            let left_move = falling_sand.next_left();
+
+            if !cave_rock_structure.contains(&left_move) {
+                falling_sand.fall_left();
+                continue 'unit_of_sand_falling;
+            }
+
+            let right_move = falling_sand.next_right();
+
+            if !cave_rock_structure.contains(&right_move) {
+                falling_sand.fall_rigth();
+                continue 'unit_of_sand_falling;
+            }
+
+            sand_in_rest += 1;
+            cave_rock_structure.insert(falling_sand);
+            break 'unit_of_sand_falling;
+        }
+    }
+
+    println!("{}", sand_in_rest);
 }
