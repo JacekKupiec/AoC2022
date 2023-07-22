@@ -6,6 +6,11 @@ use std::io::{BufRead, BufReader};
 use std::iter::repeat;
 use std::str::FromStr;
 
+/* Here each point is a separate element in a set. This approach disenables add a infinite horizontal line.
+ To make it easy I should have stored each line as a struct and for each unit of sand after each move
+  I should have been iterating over all lines and check if I the sand touch the rock. This definitely
+  slows down the execution time but allows to add an infinite line easily. */
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 struct Point {
     x : i32,
@@ -111,14 +116,17 @@ fn main() {
         .collect();
 
     let mut sand_in_rest = 0;
-    let cave_bed = cave_rock_structure.iter().map(|p| p.y).max().unwrap();
+    let cave_bed = cave_rock_structure.iter().map(|p| p.y).max().unwrap() + 1;
+    let pouring_point = Point::new(500, 0);
 
     'sand_falling_process: loop {
-        let mut falling_sand = Point::new(500, 0);
+        let mut falling_sand = pouring_point;
 
         'unit_of_sand_falling: loop {
-            if falling_sand.y >= cave_bed {
-                break 'sand_falling_process;
+            if falling_sand.y == cave_bed {
+                sand_in_rest += 1;
+                cave_rock_structure.insert(falling_sand);
+                break 'unit_of_sand_falling;
             }
 
             let down_move = falling_sand.next_down();
@@ -144,7 +152,12 @@ fn main() {
 
             sand_in_rest += 1;
             cave_rock_structure.insert(falling_sand);
-            break 'unit_of_sand_falling;
+
+            if falling_sand == pouring_point {
+                break 'sand_falling_process;
+            } else {
+                break 'unit_of_sand_falling;
+            }
         }
     }
 
