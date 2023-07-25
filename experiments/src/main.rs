@@ -22,14 +22,8 @@ fn evaluate_polynomial(coefficients: &Vec<f64>, r: f64) -> f64 {
 }
 
 fn main() {
-    let x = (4.0f64 - 15.0f64) / 0.0;
-    println!("{} {}", x + 4.0, 3.0 / x);
+    let i = -0;
+    let x = -i..=i;
 
-    let w = vec![1.0, 12.0, 4.5];
-    let dw = derivate(&w);
-    let ddw = derivate(&dw);
-    let ddw_value = evaluate_polynomial(&ddw, 7f64);
-
-    println!("{:?} {:?} {:?}", w, dw, ddw);
-    println!("{:?}", ddw_value);
+    println!("{}", x.count());
 }
