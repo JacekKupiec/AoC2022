@@ -32,11 +32,36 @@ fn merge(intervals: Vec<(i32, i32)>) -> Vec<(i32, i32)> {
     return stack;
 }
 
+fn task1(sensors: &HashMap<(i32, i32), (i32, i32)>, beacons: &Vec<(i32, i32)>) -> usize{
+    const POSITION_Y: i32 = 2_000_000;
+    let mut intervals: Vec<_> = sensors.iter().filter_map(|(sensor, beacon)| {
+        let distance = manhattan_distance(sensor.0, sensor.1, beacon.0, beacon.1);
+        let distance_y = (sensor.1 - POSITION_Y).abs();
+        let distance_x = distance - distance_y;
+
+        if distance_x >= 0 {
+            Some((sensor.0 - distance_x, sensor.0 + distance_x))
+        } else {
+            None
+        }
+    })
+        .collect();
+
+    intervals.sort_unstable_by(|i1, i2| i1.0.cmp(&i2.0));
+
+    let merged_intervals = merge(intervals);
+    let excluded_positions_count: i32 = merged_intervals.iter().map(|interval| interval.1 - interval.0 + 1).sum();
+    let beacons_in_line = beacons.iter().filter(|b| b.1 == POSITION_Y).count();
+    let result = excluded_positions_count as usize - beacons_in_line;
+
+    return result;
+}
+
 fn main() {
     let path = "D:\\source\\Rust\\AoC 2022\\day_15\\src\\input.txt";
     let file = File::open(path).unwrap();
     let reader = BufReader::new(file);
-    const POSITION_Y: i32 = 2_000_000;
+
     let mut sensors: HashMap<(i32, i32), (i32, i32)> = HashMap::new();
     let mut beacons = Vec::new();
 
@@ -53,25 +78,5 @@ fn main() {
         let _ = beacons.push((beacon_x, beacon_y));
     }
 
-    let mut intervals: Vec<_> = sensors.iter().filter_map(|(sensor, beacon)| {
-            let distance = manhattan_distance(sensor.0, sensor.1, beacon.0, beacon.1);
-            let distance_y = (sensor.1 - POSITION_Y).abs();
-            let distance_x = distance - distance_y;
 
-            if distance_x >= 0 {
-                Some((sensor.0 - distance_x, sensor.0 + distance_x))
-            } else {
-                None
-            }
-        })
-        .collect();
-
-    intervals.sort_unstable_by(|i1, i2| i1.0.cmp(&i2.0));
-
-    let merged_intervals = merge(intervals);
-    let excluded_positions_count: i32 = merged_intervals.iter().map(|interval| interval.1 - interval.0 + 1).sum();
-    let beacons_in_line = beacons.iter().filter(|b| b.1 == POSITION_Y).count();
-    let result = excluded_positions_count as usize - beacons_in_line;
-
-    println!("Beacon can't be in {} positions", result);
 }
