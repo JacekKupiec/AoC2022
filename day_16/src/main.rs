@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet, VecDeque};
 use std::fs::File;
 use std::io::{BufRead, BufReader};
 use scanf::sscanf;
@@ -18,6 +18,47 @@ struct Vertex {
 Distance from each valve to any neighbour is always 1 minute.
 To open a valve it takes always 1 minute as well.
  */
+
+fn bfs(graph: &HashMap<String, Vertex>, name: &str) -> Vec<(String, i32)> {
+    let start_vertex_name = name.to_owned();
+    let mut distances = vec![(start_vertex_name, 0)];
+    let mut fifo = VecDeque::from([(name, 0)]);
+    let mut visited = HashSet::from([name]);
+
+    while !fifo.is_empty() {
+        let (vertex_name, distance) = fifo.pop_front().unwrap();
+        let vertex = graph.get(vertex_name).unwrap();
+
+        for neighbour in &vertex.neighbours {
+            if !visited.contains(neighbour.name.as_str()) {
+                let distance_pair = (neighbour.name.clone(), distance + 1);
+                distances.push(distance_pair);
+
+                let fifo_pair = (neighbour.name.as_str(), distance + 1);
+                fifo.push_back(fifo_pair);
+
+                visited.insert(&neighbour.name);
+            }
+        }
+    }
+
+    return distances;
+}
+
+fn get_distances(graph: &HashMap<String, Vertex>) -> HashMap<(String, String), i32> {
+    let mut distances: HashMap<(String, String), i32> = HashMap::new();
+
+    for (_, vertex) in graph {
+        let distances_from_vertex = bfs(graph, vertex.name.as_str());
+
+        for (distance_to, distance) in distances_from_vertex {
+            let distance_from = vertex.name.clone();
+            distances.insert((distance_from, distance_to), distance);
+        }
+    }
+
+    return distances;
+}
 
 fn main() {
     let path = "E:\\source\\Rust\\AoC 2022\\day_16\\input.txt";
@@ -59,4 +100,6 @@ fn main() {
 
         buffer.clear();
     }
+
+    let distances = get_distances(&graph);
 }
