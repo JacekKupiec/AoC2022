@@ -3,11 +3,13 @@ use std::fs::File;
 use std::io::{BufRead, BufReader};
 use scanf::sscanf;
 
+#[derive(Debug)]
 struct Edge {
     name: String,
     distance: i32
 }
 
+#[derive(Debug)]
 struct Vertex {
     rate: i32,
     name: String,
@@ -61,7 +63,7 @@ fn get_distances(graph: &HashMap<String, Vertex>) -> HashMap<(String, String), i
 }
 
 fn main() {
-    let path = "E:\\source\\Rust\\AoC 2022\\day_16\\input.txt";
+    let path = "small_input.txt";
     let file = File::open(path).unwrap();
     let mut reader = BufReader::new(file);
     let mut buffer = String::new();
@@ -75,16 +77,16 @@ fn main() {
             break;
         }
 
-        let (vertex_info, neighbourhood_info) = buffer
-            .trim_end()
+        let trimmed_buffer = buffer.trim_end();
+        let (vertex_info, neighbourhood_info) = trimmed_buffer
             .split_once("; tunnels lead to valves ")
-            .or_else(|| buffer.split_once("; tunnel leads to valve "))
+            .or_else(|| trimmed_buffer.split_once("; tunnel leads to valve "))
             .unwrap();
         let mut vertex_name = String::new();
         let mut rate = 0i32;
 
         let _ = sscanf!(vertex_info, "Valve {} has flow rate={}", vertex_name, rate);
-        let edges: Vec<Edge> = neighbourhood_info.split(',').map(|s| Edge {
+        let edges: Vec<Edge> = neighbourhood_info.split(", ").map(|s| Edge {
             name: String::from(s),
             distance: 1
         })
@@ -101,5 +103,9 @@ fn main() {
         buffer.clear();
     }
 
+    println!("{:?}", graph);
+
     let distances = get_distances(&graph);
+
+    println!("{:?}", distances);
 }
