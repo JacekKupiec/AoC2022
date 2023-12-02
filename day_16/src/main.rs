@@ -62,8 +62,35 @@ fn get_distances(graph: &HashMap<String, Vertex>) -> HashMap<(String, String), i
     return distances;
 }
 
+fn dfs(graph: &HashMap<String, Vertex>, neighbours: &Vec<String>, distances: &HashMap<(String, String), i32>, visited: &mut HashSet<String>, start: &str, time: i32) -> i32 {
+    if time == 0 {
+        return 0;
+    }
+
+    let mut results = Vec::new();
+
+    for n in neighbours {
+        let key = (start.to_string(), n.to_string());
+        let time_left = time - distances[&key] - 1;
+        let vertex_rate = graph[n].rate;
+
+        if !visited.contains(n) && time_left >= 0 {
+            visited.insert(n.to_string());
+            let result = time_left* vertex_rate + dfs(graph, neighbours, distances, visited, n, time_left);
+            visited.remove(n);
+            results.push(result);
+        }
+    }
+
+    if let Some(max_result) = results.iter().max() {
+        *max_result
+    } else {
+        0
+    }
+}
+
 fn main() {
-    let path = "small_input.txt";
+    let path = "input.txt";
     let file = File::open(path).unwrap();
     let mut reader = BufReader::new(file);
     let mut buffer = String::new();
@@ -103,9 +130,12 @@ fn main() {
         buffer.clear();
     }
 
-    println!("{:?}", graph);
-
     let distances = get_distances(&graph);
+    let neighbours: Vec<_> = graph.values()
+        .filter_map(|v| if v.rate > 0 { Some(v.name.clone()) } else { None })
+        .collect();
+    let mut visited = HashSet::new();
+    let result = dfs(&graph, &neighbours, &distances, &mut visited,"AA", 30);
 
-    println!("{:?}", distances);
+    println!("{}", result);
 }
