@@ -19,6 +19,7 @@ struct Vertex {
 /*
 Distance from each valve to any neighbour is always 1 minute.
 To open a valve it takes always 1 minute as well.
+Optimisation trick: https://www.youtube.com/watch?v=bLMj50cpOug
  */
 
 fn bfs(graph: &HashMap<String, Vertex>, name: &str) -> Vec<(String, i32)> {
@@ -62,11 +63,12 @@ fn get_distances(graph: &HashMap<String, Vertex>) -> HashMap<(String, String), i
     return distances;
 }
 
-fn dfs(graph: &HashMap<String, Vertex>, neighbours: &Vec<String>, distances: &HashMap<(String, String), i32>, visited: &mut HashSet<String>, start: &str, time: i32) -> i32 {
-    if time == 0 {
-        return 0;
-    }
-
+fn dfs(graph: &HashMap<String, Vertex>,
+       neighbours: &Vec<String>,
+       distances: &HashMap<(String, String), i32>,
+       visited: &mut HashSet<String>,
+       start: &str,
+       time: i32) -> i32 {
     let mut results = Vec::new();
 
     for n in neighbours {
@@ -74,7 +76,7 @@ fn dfs(graph: &HashMap<String, Vertex>, neighbours: &Vec<String>, distances: &Ha
         let time_left = time - distances[&key] - 1;
         let vertex_rate = graph[n].rate;
 
-        if !visited.contains(n) && time_left >= 0 {
+        if !visited.contains(n) && time_left > 0 {
             visited.insert(n.to_string());
             let result = time_left* vertex_rate + dfs(graph, neighbours, distances, visited, n, time_left);
             visited.remove(n);
@@ -88,6 +90,17 @@ fn dfs(graph: &HashMap<String, Vertex>, neighbours: &Vec<String>, distances: &Ha
         0
     }
 }
+
+fn dfs_with_elephant(graph: &HashMap<String, Vertex>,
+                     neighbours: &Vec<String>,
+                     distances: &HashMap<(String, String), i32>,
+                     visited: &mut HashSet<String>,
+                     start: &str,
+                     time_human: i32,
+                     time_elephant: i32) -> i32 {
+0
+}
+
 
 fn main() {
     let path = "input.txt";
@@ -135,7 +148,11 @@ fn main() {
         .filter_map(|v| if v.rate > 0 { Some(v.name.clone()) } else { None })
         .collect();
     let mut visited = HashSet::new();
+    // Solution part 1
     let result = dfs(&graph, &neighbours, &distances, &mut visited,"AA", 30);
+
+    //Solution part 2
+    //let result = dfs(&graph, &neighbours, &distances, &mut visited,"AA", 26);
 
     println!("{}", result);
 }
