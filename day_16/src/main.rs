@@ -19,7 +19,7 @@ struct Vertex {
 /*
 Distance from each valve to any neighbour is always 1 minute.
 To open a valve it takes always 1 minute as well.
-Optimisation trick: https://www.youtube.com/watch?v=bLMj50cpOug
+Optimisation tricks: https://www.youtube.com/watch?v=bLMj50cpOug
  */
 
 fn bfs(graph: &HashMap<String, Vertex>, name: &str) -> Vec<(String, i32)> {
@@ -63,44 +63,57 @@ fn get_distances(graph: &HashMap<String, Vertex>) -> HashMap<(String, String), i
     return distances;
 }
 
-fn dfs(graph: &HashMap<String, Vertex>,
-       neighbours: &Vec<String>,
-       distances: &HashMap<(String, String), i32>,
-       visited: &mut HashSet<String>,
-       start: &str,
-       time: i32) -> i32 {
+fn dfs<'a>(
+    graph: &HashMap<String, Vertex>,
+    distances: &HashMap<(String, String), i32>,
+    translation: &'a HashMap<i32, String>,
+    all_neighbours_count: i32,
+    start: &'a str,
+    time: i32,
+    neighbours: i32,
+    cache: &mut HashMap<(i32, &'a str, i32), i32>) -> i32
+{
+    if let Some(result) = cache.get(&(time, start, neighbours)) {
+        return *result;
+    }
+
     let mut results = Vec::new();
 
-    for n in neighbours {
-        let key = (start.to_string(), n.to_string());
-        let time_left = time - distances[&key] - 1;
-        let vertex_rate = graph[n].rate;
+    for neighbour_idx in 0..all_neighbours_count {
+        let not_visited = neighbours & (1 << neighbour_idx) != 0;
 
-        if !visited.contains(n) && time_left > 0 {
-            visited.insert(n.to_string());
-            let result = time_left* vertex_rate + dfs(graph, neighbours, distances, visited, n, time_left);
-            visited.remove(n);
+        let neighbour_name = &translation[&neighbour_idx];
+        let key = (start.to_string(), neighbour_name.to_string());
+        let time_left = time - distances[&key] - 1;
+
+        if not_visited && time_left > 0 {
+            let neighbours_after_pick_new_start = neighbours & !(1 << neighbour_idx);
+            let vertex_rate = graph[neighbour_name].rate;
+
+            let result = time_left*vertex_rate
+                + dfs(graph,
+                      distances,
+                      translation,
+                      all_neighbours_count,
+                      neighbour_name,
+                      time_left,
+                      neighbours_after_pick_new_start,
+                      cache);
+
             results.push(result);
         }
     }
 
-    if let Some(max_result) = results.iter().max() {
+    let result = if let Some(max_result) = results.iter().max() {
         *max_result
     } else {
         0
-    }
-}
+    };
 
-fn dfs_with_elephant(graph: &HashMap<String, Vertex>,
-                     neighbours: &Vec<String>,
-                     distances: &HashMap<(String, String), i32>,
-                     visited: &mut HashSet<String>,
-                     start: &str,
-                     time_human: i32,
-                     time_elephant: i32) -> i32 {
-0
-}
+    cache.insert((time, start, neighbours), result);
 
+    return result;
+}
 
 fn main() {
     let path = "input.txt";
@@ -108,7 +121,6 @@ fn main() {
     let mut reader = BufReader::new(file);
     let mut buffer = String::new();
     let mut graph: HashMap<String, Vertex> = HashMap::new();
-
 
     // read the input graph
     while let Ok(bytes_read) = reader.read_line(&mut buffer) {
@@ -126,11 +138,13 @@ fn main() {
         let mut rate = 0i32;
 
         let _ = sscanf!(vertex_info, "Valve {} has flow rate={}", vertex_name, rate);
-        let edges: Vec<Edge> = neighbourhood_info.split(", ").map(|s| Edge {
-            name: String::from(s),
-            distance: 1
-        })
-        .collect();
+        let edges: Vec<Edge> = neighbourhood_info.split(", ")
+            .map(|s|
+                Edge {
+                    name: String::from(s),
+                    distance: 1
+            })
+            .collect();
 
         let vertex = Vertex {
             rate,
@@ -143,16 +157,35 @@ fn main() {
         buffer.clear();
     }
 
+    let mut cache = HashMap::new();
     let distances = get_distances(&graph);
-    let neighbours: Vec<_> = graph.values()
+    let translation: HashMap<_,_> = graph.values()
         .filter_map(|v| if v.rate > 0 { Some(v.name.clone()) } else { None })
+        .enumerate()
+        .map(|(idx, name)| (idx as i32, name))
         .collect();
-    let mut visited = HashSet::new();
+    let neighbours_bitmask = (1 << translation.len()) - 1;
+
     // Solution part 1
-    let result = dfs(&graph, &neighbours, &distances, &mut visited,"AA", 30);
+    let result = dfs(
+        &graph,
+        &distances,
+        &translation,
+        translation.len() as i32,
+        "AA",
+        30,
+        neighbours_bitmask,
+        &mut cache);
+
+    println!("{}", result);
 
     //Solution part 2
-    //let result = dfs(&graph, &neighbours, &distances, &mut visited,"AA", 26);
+    let result = (0..=neighbours_bitmask/2)
+        .map(|combination_bitmask|
+            dfs(&graph, &distances, &translation, translation.len() as i32, "AA", 26, combination_bitmask, &mut cache)
+            + dfs(&graph, &distances, &translation, translation.len() as i32, "AA", 26, neighbours_bitmask ^ combination_bitmask, &mut cache))
+        .max()
+        .unwrap();
 
     println!("{}", result);
 }
