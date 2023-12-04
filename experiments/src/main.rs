@@ -1,29 +1,12 @@
-use std::f64::consts::PI;
-use chrono::DateTime;
-
-fn derivate(polynomial: &Vec<f64>) -> Vec<f64> {
-    let deg = polynomial.len();
-
-    (1..deg).rev()
-        .enumerate()
-        .map(|(idx, n)| n as f64 * polynomial[idx])
-        .collect()
-}
-
-fn evaluate_polynomial(coefficients: &Vec<f64>, r: f64) -> f64 {
-    let mut result = coefficients[0];
-    let r = r + 1.0;
-
-    for coefficient in coefficients.iter().skip(1) {
-        result = result*r + coefficient;
-    }
-
-    return result;
-}
+use std::collections::HashSet;
 
 fn main() {
-    let i = -0;
-    let x = -i..=i;
+    let s = "str";
+    let s2 = String::from("strstr");
+    let set = HashSet::from([s]);
 
-    println!("{}", x.count());
+    println!("{} {}", &s2[0..=2], set.contains(&s2[0..=2]));
+
+    let x = -17;
+    println!("{:#03b}\n{:#034b}", x, !x);
 }
