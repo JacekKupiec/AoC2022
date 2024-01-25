@@ -1,6 +1,6 @@
 use std::collections::HashSet;
 use std::fs::File;
-use std::io::{Read, Write};
+use std::io::Read;
 use std::iter::{Cycle, Enumerate};
 use std::slice::Iter;
 use std::str::Bytes;
