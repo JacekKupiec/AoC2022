@@ -1,6 +1,9 @@
 use std::collections::HashSet;
 use std::fs::File;
-use std::io::Read;
+use std::io::{Read, Write};
+use std::iter::{Cycle, Enumerate};
+use std::slice::Iter;
+use std::str::Bytes;
 
 #[derive(Debug, Copy, Clone)]
 enum WindDirection {
@@ -39,7 +42,7 @@ struct Rock {
     rock_pieces: Vec<Point>
 }
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
 enum RockType {
     Minus,
     Plus,
@@ -172,32 +175,31 @@ impl RockHeap {
     }
 }
 
-fn main() {
-    let path = "input.txt";
-    let mut file = File::open(path).unwrap();
-    let mut buffer = String::new();
+fn run_to_zero(
+    rock_heap: &mut RockHeap,
+    wind: &mut Enumerate<Cycle<Bytes>>,
+    rocks_falling: &mut Cycle<Iter<RockType>>,
+    wind_period: usize,
+    max_elements_count : usize,
+    stop_element: usize)
+-> Vec<i64>
+{
+    let mut heap_height_with_wind = Vec::new();
 
-    if let Err(message) = file.read_to_string(&mut buffer) {
-        println!("Error message: {}", message)
-    }
-
-    let rocks_falling = [RockType::Minus, RockType::Plus, RockType::L, RockType::Pipe, RockType::Square];
-    let mut wind = buffer.trim_end().bytes().cycle();
-    let mut rock_heap = RockHeap::new();
-
-    for rock_type in rocks_falling.iter().cycle().take(2022) {
+    'rock_loop: for rock_type in rocks_falling.take(max_elements_count) {
         let mut rock = Rock::new(*rock_type, rock_heap.max_height);
-        // let rock_size = rock.rock_pieces.len();
 
         loop {
-            let wind_direction = if let Some(c) = wind.next() {
-                match c {
+            let (wind_idx, wind_direction) = if let Some((idx, c)) = wind.next() {
+                let direction = match c {
                     b'<' => WindDirection::Left,
                     b'>' => WindDirection::Right,
                     _ => panic!("Unsupported character! Not < or >")
-                }
+                };
+
+                (idx, direction)
             } else {
-                break;
+                panic!("End of wind");
             };
 
             if rock_heap.can_move_horizontally(&rock, wind_direction) {
@@ -208,16 +210,69 @@ fn main() {
                 rock.move_down();
             } else {
                 rock_heap.add_rock(rock);
-                break;
+
+                heap_height_with_wind.push(rock_heap.max_height);
+
+                if (wind_idx % wind_period == stop_element) {
+                    break 'rock_loop;
+                } else {
+                    break;
+                }
             }
         }
-
-        // println!("Heap size {}, max_height: {}, rock_length: {}, rock_type: {:?}",
-        //          rock_heap.heap.len(),
-        //          rock_heap.max_height,
-        //          rock_size,
-        //          rock_type);
     }
 
-    println!("Tower height: {}", rock_heap.max_height);
+    return heap_height_with_wind;
+}
+
+fn main() {
+    let path = "input.txt";
+    let mut file = File::open(path).unwrap();
+    let mut buffer = String::new();
+
+    if let Err(message) = file.read_to_string(&mut buffer) {
+        println!("Error message: {}", message)
+    }
+
+    let rock_types = [RockType::Minus, RockType::Plus, RockType::L, RockType::Pipe, RockType::Square];
+    let mut rocks_falling = rock_types.iter().cycle();
+    let wind_period = buffer.len();
+    let mut wind = buffer.bytes().cycle().enumerate();
+    let mut rock_heap = RockHeap::new();
+    const STEPS_NUMBER: i64 = 1000000000000;
+
+    let mut steps_unique = run_to_zero(
+        &mut rock_heap,
+        &mut wind,
+        &mut rocks_falling,
+        wind_period,
+        STEPS_NUMBER as usize,
+        6);
+    let mut steps_repeated = run_to_zero(
+        &mut rock_heap,
+        &mut wind,
+        &mut rocks_falling,
+        wind_period,
+        STEPS_NUMBER as usize,
+        6);
+
+    // let mut file_output = File::create("output.csv").unwrap();
+    // let _ = file_output.write("Height,Wind\n".as_bytes());
+    //
+    // for (h, i) in steps_unique {
+    //     let content = format!("{},{}\n", h, i);
+    //     let _ = file_output.write(content.as_bytes());
+    // }
+
+    let base_level = steps_unique.last().unwrap();
+    let delta = steps_repeated.last().unwrap() - base_level;
+    let steps_left = STEPS_NUMBER - steps_unique.len() as i64;
+    let cycle_length = steps_repeated.len() as i64;
+    let division = steps_left / cycle_length;
+    let reminder = steps_left % cycle_length;
+
+    let reminder_height = if reminder > 0 { steps_repeated[(reminder - 1) as usize] - base_level } else { 0 };
+    let height = steps_unique.last().unwrap() + division*delta + reminder_height;
+
+    println!("Height: {}", height);
 }
