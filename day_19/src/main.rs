@@ -60,7 +60,7 @@ fn main() {
                 geode_robot_ore_cost,
                 geode_robot_obsidian_cost);
 
-            //macro_recult.unwrap();
+            macro_recult.unwrap();
 
             return Blueprint::new(
                 blueprint_id,
@@ -72,9 +72,7 @@ fn main() {
                 geode_robot_obsidian_cost
             );
         })
-        .map(|blueprint| {
-            equality_level(&blueprint)
-        })
+        .map(|blueprint| equality_level(&blueprint))
         .sum();
 
     println!("Sum of blueprints' equality levels is: {}", result)
